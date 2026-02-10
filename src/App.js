@@ -52,12 +52,14 @@ function App() {
   const containerRef = useRef(null);
   const items = STAGES[0].data;
 
-  // --- 드래그 핸들러 ---
-  const handleMouseDown = (e, id, type) => {
+  // --- 포인터 이벤트 핸들러 (마우스 + 터치 통합) ---
+  const handlePointerDown = (e, id, type) => {
     if (isAllCorrect || submitted) return; 
-    
-    // 브라우저 기본 드래그 및 텍스트 선택 차단
+
+    // 브라우저 기본 동작(텍스트 선택, 이미지 드래그) 차단
     e.preventDefault(); 
+    // 포인터 캡처: 드래그 중 손가락이 점 밖으로 나가도 이벤트를 유지
+    e.target.setPointerCapture(e.pointerId);
 
     const rect = e.target.getBoundingClientRect();
     const containerRect = containerRef.current.getBoundingClientRect();
@@ -70,7 +72,7 @@ function App() {
     setIsDragging(true);
   };
 
-  const handleMouseMove = (e) => {
+  const handlePointerMove = (e) => {
     if (!isDragging) return;
     const containerRect = containerRef.current.getBoundingClientRect();
     setMousePos({
@@ -79,8 +81,11 @@ function App() {
     });
   };
 
-  const handleMouseUp = (e, targetId, targetType) => {
+  const handlePointerUp = (e, targetId, targetType) => {
     if (!isDragging || !dragStart) return;
+
+    // 포인터 캡처 해제
+    e.target.releasePointerCapture(e.pointerId);
 
     const connectionType = (dragStart.type === 'img' && targetType === 'nameTop') ? 'first' : 
                            (dragStart.type === 'nameBottom' && targetType === 'usage') ? 'second' : null;
@@ -92,7 +97,7 @@ function App() {
       const endY = rect.top + rect.height / 2 - containerRect.top + containerRef.current.scrollTop;
 
       setMatches(prev => {
-        // 1:1 매칭을 위한 기존 선 자동 교체 로직
+        // 기존 1:1 연결 자동 교체 로직
         const filteredMatches = prev.filter(m => 
           !(m.type === connectionType && (m.startId === dragStart.id || m.endId === targetId))
         );
@@ -111,7 +116,6 @@ function App() {
     setDragStart(null);
   };
 
-  // --- 결과 확인 로직 ---
   const handleSubmit = () => {
     const requiredMatches = items.length * 2;
     if (matches.length < requiredMatches) {
@@ -137,7 +141,7 @@ function App() {
   };
 
   return (
-    <div className="app-container" ref={containerRef} onMouseMove={handleMouseMove} onMouseUp={() => setIsDragging(false)}>
+    <div className="app-container" ref={containerRef} onPointerMove={handlePointerMove} onPointerUp={() => setIsDragging(false)}>
       <div className="status-bar"></div>
       
       <header className="header">
@@ -162,7 +166,7 @@ function App() {
           {items.map(item => (
             <div key={item.id} className="item-group">
               <div className="image-card"><img src={item.img} alt="" /></div>
-              <div className="dot" onMouseDown={(e) => handleMouseDown(e, item.id, 'img')}></div>
+              <div className="dot" onPointerDown={(e) => handlePointerDown(e, item.id, 'img')}></div>
             </div>
           ))}
         </div>
@@ -170,9 +174,9 @@ function App() {
         <div className="row">
           {items.map(item => (
             <div key={item.id} className="item-group">
-              <div className="dot" onMouseUp={(e) => handleMouseUp(e, item.id, 'nameTop')}></div>
+              <div className="dot" onPointerUp={(e) => handlePointerUp(e, item.id, 'nameTop')}></div>
               <div className="text-button">{item.name}</div>
-              <div className="dot" onMouseDown={(e) => handleMouseDown(e, item.id, 'nameBottom')}></div>
+              <div className="dot" onPointerDown={(e) => handlePointerDown(e, item.id, 'nameBottom')}></div>
             </div>
           ))}
         </div>
@@ -180,7 +184,7 @@ function App() {
         <div className="row">
           {items.map(item => (
             <div key={item.id} className="item-group">
-              <div className="dot" onMouseUp={(e) => handleMouseUp(e, item.id, 'usage')}></div>
+              <div className="dot" onPointerUp={(e) => handlePointerUp(e, item.id, 'usage')}></div>
               <div className="text-button">{item.usage}</div>
             </div>
           ))}
@@ -189,7 +193,7 @@ function App() {
 
       <footer className="footer">
         {isAllCorrect ? (
-          <button className="next-button" onClick={() => alert("다음 문제 이동")}>다음 문제</button>
+          <button className="next-button" onClick={() => alert("성공!")}>다음 문제</button>
         ) : submitted ? (
           <button className="retry-button" onClick={handleRetry}>다시 풀기</button>
         ) : (
