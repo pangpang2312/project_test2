@@ -24,7 +24,8 @@ function App() {
 
 export default App;*/
 
-import React, { useState, useRef } from 'react'; // useEffect를 제거하여 배포 에러 해결
+
+import React, { useState, useRef } from 'react';
 import './App.css';
 
 /**
@@ -35,8 +36,8 @@ const STAGES = [
     page: 1,
     title: "2단계: 장비-용도 알아가기",
     data: [
-      { id: 1, name: "덤프트럭", usage: "굴착 토사 등을 운반", img: "/images/a.png" },
-      { id: 2, name: "굴착기", usage: "지반을 굴착", img: "/images/b.png" }
+      { id: 1, name: "덤프트럭", usage: "굴착 토사 등을 운반", img: "/images/b.png" },
+      { id: 2, name: "굴착기", usage: "지반을 굴착", img: "/images/a.png" }
     ]
   }
 ];
@@ -52,14 +53,12 @@ function App() {
   const containerRef = useRef(null);
   const items = STAGES[0].data;
 
-  // --- 포인터 이벤트 핸들러 (마우스 + 터치 통합) ---
+  // --- 드래그 시작 (포인터 다운) ---
   const handlePointerDown = (e, id, type) => {
     if (isAllCorrect || submitted) return; 
 
-    // 브라우저 기본 동작(텍스트 선택, 이미지 드래그) 차단
     e.preventDefault(); 
-    // 포인터 캡처: 드래그 중 손가락이 점 밖으로 나가도 이벤트를 유지
-    e.target.setPointerCapture(e.pointerId);
+    e.target.setPointerCapture(e.pointerId); // 포인터 이벤트를 현재 요소에 고정
 
     const rect = e.target.getBoundingClientRect();
     const containerRect = containerRef.current.getBoundingClientRect();
@@ -72,6 +71,7 @@ function App() {
     setIsDragging(true);
   };
 
+  // --- 드래그 중 (포인터 무브) ---
   const handlePointerMove = (e) => {
     if (!isDragging) return;
     const containerRect = containerRef.current.getBoundingClientRect();
@@ -81,23 +81,27 @@ function App() {
     });
   };
 
-  const handlePointerUp = (e, targetId, targetType) => {
+  // --- 드래그 종료 (도착점 인식 강화) ---
+  const handlePointerUp = (e) => {
     if (!isDragging || !dragStart) return;
 
-    // 포인터 캡처 해제
-    e.target.releasePointerCapture(e.pointerId);
+    // 포인터가 떨어진 위치의 실제 요소를 찾아 정보 추출
+    const releaseTarget = document.elementFromPoint(e.clientX, e.clientY);
+    const targetId = parseInt(releaseTarget?.getAttribute('data-id'));
+    const targetType = releaseTarget?.getAttribute('data-type');
 
+    // 연결 유효성 검사 (사진->명칭상단 / 명칭하단->용도상단)
     const connectionType = (dragStart.type === 'img' && targetType === 'nameTop') ? 'first' : 
                            (dragStart.type === 'nameBottom' && targetType === 'usage') ? 'second' : null;
 
-    if (connectionType) {
-      const rect = e.target.getBoundingClientRect();
+    if (connectionType && targetId) {
+      const rect = releaseTarget.getBoundingClientRect();
       const containerRect = containerRef.current.getBoundingClientRect();
       const endX = rect.left + rect.width / 2 - containerRect.left;
       const endY = rect.top + rect.height / 2 - containerRect.top + containerRef.current.scrollTop;
 
       setMatches(prev => {
-        // 기존 1:1 연결 자동 교체 로직
+        // 1:1 매칭을 위한 자동 교체 로직 (기존 연결 필터링)
         const filteredMatches = prev.filter(m => 
           !(m.type === connectionType && (m.startId === dragStart.id || m.endId === targetId))
         );
@@ -111,6 +115,11 @@ function App() {
           isCorrect: null 
         }];
       });
+    }
+
+    // 캡처 해제 및 드래그 상태 초기화
+    if (e.target.hasPointerCapture(e.pointerId)) {
+      e.target.releasePointerCapture(e.pointerId);
     }
     setIsDragging(false);
     setDragStart(null);
@@ -141,7 +150,7 @@ function App() {
   };
 
   return (
-    <div className="app-container" ref={containerRef} onPointerMove={handlePointerMove} onPointerUp={() => setIsDragging(false)}>
+    <div className="app-container" ref={containerRef} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}>
       <div className="status-bar"></div>
       
       <header className="header">
@@ -166,7 +175,8 @@ function App() {
           {items.map(item => (
             <div key={item.id} className="item-group">
               <div className="image-card"><img src={item.img} alt="" /></div>
-              <div className="dot" onPointerDown={(e) => handlePointerDown(e, item.id, 'img')}></div>
+              {/* data-id와 data-type을 추가하여 elementFromPoint가 인식할 수 있게 함 */}
+              <div className="dot" data-id={item.id} data-type="img" onPointerDown={(e) => handlePointerDown(e, item.id, 'img')}></div>
             </div>
           ))}
         </div>
@@ -174,9 +184,9 @@ function App() {
         <div className="row">
           {items.map(item => (
             <div key={item.id} className="item-group">
-              <div className="dot" onPointerUp={(e) => handlePointerUp(e, item.id, 'nameTop')}></div>
+              <div className="dot" data-id={item.id} data-type="nameTop"></div>
               <div className="text-button">{item.name}</div>
-              <div className="dot" onPointerDown={(e) => handlePointerDown(e, item.id, 'nameBottom')}></div>
+              <div className="dot" data-id={item.id} data-type="nameBottom" onPointerDown={(e) => handlePointerDown(e, item.id, 'nameBottom')}></div>
             </div>
           ))}
         </div>
@@ -184,7 +194,7 @@ function App() {
         <div className="row">
           {items.map(item => (
             <div key={item.id} className="item-group">
-              <div className="dot" onPointerUp={(e) => handlePointerUp(e, item.id, 'usage')}></div>
+              <div className="dot" data-id={item.id} data-type="usage"></div>
               <div className="text-button">{item.usage}</div>
             </div>
           ))}
@@ -193,7 +203,7 @@ function App() {
 
       <footer className="footer">
         {isAllCorrect ? (
-          <button className="next-button" onClick={() => alert("성공!")}>다음 문제</button>
+          <button className="next-button" onClick={() => alert("미션 성공!")}>다음 문제</button>
         ) : submitted ? (
           <button className="retry-button" onClick={handleRetry}>다시 풀기</button>
         ) : (
