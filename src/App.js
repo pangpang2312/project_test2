@@ -57,12 +57,14 @@ function App() {
   const handlePointerDown = (e, id, type) => {
     if (isAllCorrect || submitted) return; 
 
+    // 브라우저 기본 동작 차단 및 포인터 고정
     e.preventDefault(); 
-    e.target.setPointerCapture(e.pointerId); // 포인터 이벤트를 현재 요소에 고정
+    e.target.setPointerCapture(e.pointerId); 
 
     const rect = e.target.getBoundingClientRect();
     const containerRect = containerRef.current.getBoundingClientRect();
     
+    // [핵심] 현재 스크롤 위치(scrollTop)를 더해 절대 좌표를 계산합니다.
     setDragStart({
       id, type,
       x: rect.left + rect.width / 2 - containerRect.left,
@@ -81,16 +83,15 @@ function App() {
     });
   };
 
-  // --- 드래그 종료 (도착점 인식 강화) ---
+  // --- 드래그 종료 (도착점 인식) ---
   const handlePointerUp = (e) => {
     if (!isDragging || !dragStart) return;
 
-    // 포인터가 떨어진 위치의 실제 요소를 찾아 정보 추출
+    // 터치 지점의 요소를 찾아 타겟 확인
     const releaseTarget = document.elementFromPoint(e.clientX, e.clientY);
     const targetId = parseInt(releaseTarget?.getAttribute('data-id'));
     const targetType = releaseTarget?.getAttribute('data-type');
 
-    // 연결 유효성 검사 (사진->명칭상단 / 명칭하단->용도상단)
     const connectionType = (dragStart.type === 'img' && targetType === 'nameTop') ? 'first' : 
                            (dragStart.type === 'nameBottom' && targetType === 'usage') ? 'second' : null;
 
@@ -101,23 +102,18 @@ function App() {
       const endY = rect.top + rect.height / 2 - containerRect.top + containerRef.current.scrollTop;
 
       setMatches(prev => {
-        // 1:1 매칭을 위한 자동 교체 로직 (기존 연결 필터링)
+        // 1:1 매칭 및 자동 교체 로직
         const filteredMatches = prev.filter(m => 
           !(m.type === connectionType && (m.startId === dragStart.id || m.endId === targetId))
         );
-
         return [...filteredMatches, {
-          startId: dragStart.id,
-          endId: targetId,
-          x1: dragStart.x, y1: dragStart.y,
-          x2: endX, y2: endY,
-          type: connectionType,
-          isCorrect: null 
+          startId: dragStart.id, endId: targetId,
+          x1: dragStart.x, y1: dragStart.y, x2: endX, y2: endY,
+          type: connectionType, isCorrect: null 
         }];
       });
     }
 
-    // 캡처 해제 및 드래그 상태 초기화
     if (e.target.hasPointerCapture(e.pointerId)) {
       e.target.releasePointerCapture(e.pointerId);
     }
@@ -175,7 +171,6 @@ function App() {
           {items.map(item => (
             <div key={item.id} className="item-group">
               <div className="image-card"><img src={item.img} alt="" /></div>
-              {/* data-id와 data-type을 추가하여 elementFromPoint가 인식할 수 있게 함 */}
               <div className="dot" data-id={item.id} data-type="img" onPointerDown={(e) => handlePointerDown(e, item.id, 'img')}></div>
             </div>
           ))}
