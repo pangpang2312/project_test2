@@ -1,4 +1,4 @@
-.App {
+/*.App {
   text-align: center;
 }
 
@@ -35,4 +35,100 @@
   to {
     transform: rotate(360deg);
   }
+}*/
+
+.app-container {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #fcfcfc;
+  position: relative;
+  font-family: 'Pretendard', sans-serif;
+  overflow-x: hidden;
+  
+  /* [핵심] 전체 컨테이너에서 텍스트 선택 방지 */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
+
+.status-bar {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #007bff 60%, #e9ecef 40%);
+  margin-bottom: 20px;
+}
+
+.header { text-align: center; padding: 20px 0; }
+.title { font-size: 22px; font-weight: 800; color: #1a1a1a; }
+.subtitle { font-size: 14px; color: #666; margin-top: 5px; }
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 55px;
+  padding: 0 20px;
+}
+
+.row { display: flex; justify-content: space-around; align-items: center; }
+.item-group { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+.image-card {
+  width: 150px; height: 105px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.image-card img {
+  width: 100%; height: 100%; object-fit: cover;
+  /* [핵심] 이미지 드래그 현상 방지 */
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.text-button {
+  width: 150px; height: 55px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  color: #333;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.dot {
+  width: 16px; height: 16px;
+  background-color: #adb5bd;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  cursor: crosshair;
+  z-index: 20;
+  touch-action: none; /* 모바일 환경 드래그 간섭 방지 */
+}
+
+.dot:hover { transform: scale(1.2); background-color: #007bff; }
+
+.connector-svg {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 10;
+}
+
+.line-dragging { stroke: #007bff; stroke-width: 3; stroke-dasharray: 6; }
+.line-fixed { stroke: #495057; stroke-width: 4; stroke-linecap: round; transition: stroke 0.4s ease; }
+.line-fixed.correct { stroke: #00bcd4; stroke-width: 6; }
+.line-fixed.wrong { stroke: #ff5252; stroke-width: 6; }
+
+.footer { padding: 30px 20px; }
+.submit-button, .retry-button, .next-button {
+  width: 100%; padding: 18px; border: none; border-radius: 12px;
+  font-weight: 800; font-size: 18px; cursor: pointer;
+}
+
+.submit-button { background-color: #373d49; color: white; }
+.retry-button { background-color: #ff5252; color: white; }
+.next-button { background-color: #00bcd4; color: white; }
