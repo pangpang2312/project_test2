@@ -24,7 +24,7 @@ function App() {
 
 export default App;*/
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react'; // useEffect를 제거하여 배포 에러 해결
 import './App.css';
 
 /**
@@ -35,8 +35,8 @@ const STAGES = [
     page: 1,
     title: "2단계: 장비-용도 알아가기",
     data: [
-      { id: 1, name: "덤프트럭", usage: "굴착 토사 등을 운반", img: "https://via.placeholder.com/300x200?text=Dump+Truck" },
-      { id: 2, name: "굴착기", usage: "지반을 굴착", img: "https://via.placeholder.com/300x200?text=Excavator" }
+      { id: 1, name: "덤프트럭", usage: "굴착 토사 등을 운반", img: "/images/a.png" },
+      { id: 2, name: "굴착기", usage: "지반을 굴착", img: "/images/b.png" }
     ]
   }
 ];
@@ -52,11 +52,11 @@ function App() {
   const containerRef = useRef(null);
   const items = STAGES[0].data;
 
-  // --- 드래그 시작 핸들러 ---
+  // --- 드래그 핸들러 ---
   const handleMouseDown = (e, id, type) => {
     if (isAllCorrect || submitted) return; 
-
-    // [핵심] 브라우저의 기본 텍스트 선택 및 이미지 드래그 동작을 차단합니다.
+    
+    // 브라우저 기본 드래그 및 텍스트 선택 차단
     e.preventDefault(); 
 
     const rect = e.target.getBoundingClientRect();
@@ -92,7 +92,7 @@ function App() {
       const endY = rect.top + rect.height / 2 - containerRect.top + containerRef.current.scrollTop;
 
       setMatches(prev => {
-        // 기존 1:1 연결이 있다면 삭제하고 교체
+        // 1:1 매칭을 위한 기존 선 자동 교체 로직
         const filteredMatches = prev.filter(m => 
           !(m.type === connectionType && (m.startId === dragStart.id || m.endId === targetId))
         );
@@ -111,6 +111,7 @@ function App() {
     setDragStart(null);
   };
 
+  // --- 결과 확인 로직 ---
   const handleSubmit = () => {
     const requiredMatches = items.length * 2;
     if (matches.length < requiredMatches) {
